@@ -1,6 +1,7 @@
 # Custom GitIgnore here:
 settings.json
 .venv
+.vscode
 
 
 # Byte-compiled / optimized / DLL files
