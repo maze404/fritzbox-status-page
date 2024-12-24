@@ -61,7 +61,7 @@ class Homepage:
         self.refresh_interval = 60  # Default refresh interval
 
     def create_frame(self):
-        background_data_collection = threading.Thread(target=self.gather_data)
+        background_data_collection = threading.Thread(target=self.refresh_data)
         background_data_collection.daemon = True
         background_data_collection.start()
         with ui.row().classes('p-0 gap-0').style('display: inline-flex; width: 100vw;'):
@@ -82,22 +82,28 @@ class Homepage:
             self.create_settings(self.create_main_content)
 
     def create_overview(self, parent):
+        def create_info_cards(self):
+            labels = [
+                ('Connected to the Internet', 'is_fritzbox_connected'),
+                ('Download Speed (Mbps)', 'download_speed'),
+                ('Upload Speed (Mbps)', 'upload_speed'),
+                ('DNS functional', 'is_dns_available')
+            ]
+            for label_text, attr_name in labels:
+                with ui.column().style('color: white; background-color: #333; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center;'):
+                    ui.label(label_text).style('font-size: 1.25rem; font-weight: bold;')
+                    setattr(self, attr_name, ui.label('Loading...').style('font-size: 2rem; text-align: center;'))
         with ui.row().style('max-width: calc(100%-250px); font-family: "Source Sans 3";'):
             if os.path.exists('settings.json'):
-                labels = [
-                    ('Connected to the Internet', 'is_fritzbox_connected'),
-                    ('Download Speed (Mbps)', 'download_speed'),
-                    ('Upload Speed (Mbps)', 'upload_speed'),
-                    ('DNS functional', 'is_dns_available')
-                ]
-                for label_text, attr_name in labels:
-                    with ui.column().style('color: white; background-color: #333; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center;'):
-                        ui.label(label_text).style('font-size: 1.25rem; font-weight: bold;')
-                        setattr(self, attr_name, ui.label('Loading...').style('font-size: 2rem; text-align: center;'))
+                create_info_cards(self)
+                threading.Thread(target=self.gather_data).start()
+            else:
+                create_info_cards(self)
+                ui.notify('Please configure the settings first!', color='red', type='negative', close_button='Understood', timeout=0)
 
     def gather_data(self):
-        while True:
-            fritzbox = fritzboxInformation()
+        fritzbox = fritzboxInformation()
+        if hasattr(self, 'is_fritzbox_connected') and os.path.exists('settings.json'):
             with open('settings.json', 'r') as json_file:
                 settings = json.load(json_file)
                 self.address = settings.get('address', '')
@@ -115,6 +121,10 @@ class Homepage:
                     self.download_speed.set_text("Error: Unable to connect to FRITZ!Box")
                     self.upload_speed.set_text("Error: Unable to connect to FRITZ!Box")
             self.is_dns_available.set_text(str(generalInfo.checkInternetConnectivity(self.domain)))
+
+    def refresh_data(self):
+        while True:
+            self.gather_data()
             time.sleep(self.refresh_interval)
 
     def create_settings(self, parent):
@@ -155,28 +165,28 @@ class Homepage:
 
     def save_settings(self, address, username, password, domain, refresh_interval):
         if not address:
-            ui.notify('IP address cannot be empty', color='red')
+            ui.notify('IP address cannot be empty', color='red', type='negative')
             return
         if not re.match(r'^\d{1,3}(\.\d{1,3}){3}$', address):
-            ui.notify('Invalid IP address format', color='red')
+            ui.notify('Invalid IP address format', color='red', type='negative')
             return
         if not username:
-            ui.notify('Username cannot be empty', color='red')
+            ui.notify('Username cannot be empty', color='red', type='negative')
             return
         if not re.match(r'^[\w-]+$', username):
-            ui.notify('Username can only contain letters, digits, underscores, and hyphens', color='red')
+            ui.notify('Username can only contain letters, digits, underscores, and hyphens', color='red', type='negative')
             return
         if not password:
-            ui.notify('Password cannot be empty', color='red')
+            ui.notify('Password cannot be empty', color='red', type='negative')
             return
         if len(password) < 8:
-            ui.notify('Password must be at least 8 characters long', color='red')
+            ui.notify('Password must be at least 8 characters long', color='red', type='negative')
             return
         if not domain:
-            ui.notify('Domain cannot be empty', color='red')
+            ui.notify('Domain cannot be empty', color='red', type='negative')
             return
         if not re.match(r'^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$', domain):
-            ui.notify('Invalid domain format', color='red')
+            ui.notify('Invalid domain format', color='red', type='negative')
             return
 
         settings = {
@@ -191,13 +201,14 @@ class Homepage:
         with open('settings.json', 'w') as json_file:
             json.dump(settings, json_file, indent=4)
         self.refresh_interval = refresh_interval
-        self.is_fritzbox_connected.set_text('Loading...')
-        self.download_speed.set_text('Loading...')
-        self.upload_speed.set_text('Loading...')
-        self.is_dns_available.set_text('Loading...')
-        background_data_collection = threading.Thread(target=self.gather_data)
+        if hasattr(self, 'is_fritzbox_connected'):
+            self.is_fritzbox_connected.set_text('Loading...')
+            self.download_speed.set_text('Loading...')
+            self.upload_speed.set_text('Loading...')
+            self.is_dns_available.set_text('Loading...')
+        background_data_collection = threading.Thread(target=self.refresh_data)
         background_data_collection.start()
-        ui.notify('Settings saved', color='green')
+        ui.notify('Settings saved, please wait for the panels to reload.', color='green', type='positive')
 
 Homepage().create_frame()
 ui.query('.nicegui-content').style('display: flex; margin: 0; padding: 0;')

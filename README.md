@@ -31,7 +31,7 @@ docker run -d --name fritzbox-status-page -p 8000:8080 ghcr.io/maze404/fritzbox-
     - [x] Settings page for entering router IP and user credentials, DNS domain to check against, etc.
     - [x] Implement a refresh interval that can be customized
     - [ ] Move settings to its own page instead of the overview page
-    - [ ] Create docker build for this program
+    - [x] Create docker build for this program
     - [ ] Show Diagrams for keeping track of the upload and download speeds (Idea taken from https://github.com/alexjustesen/speedtest-tracker )
     - [ ] Show router log messages on extra page
     - [ ] Add a button to restart the router if needed
