@@ -1,12 +1,14 @@
 # FRITZ!Box Status Page
 A status page for AVM FRITZ!Box routers to easily check internet speed and availability
 
+![Example](example.png)
+
 - written in Python 3.12.8 using NiceGUI and fritzconnection
 - only works with AVM FRTIZ!Box Routers!
     - Requires an extra user account for connecting to the fritzbox via API: https://en.avm.de/service/knowledge-base/dok/FRITZ-Box-7590/1522_Accessing-FRITZ-Box-from-the-home-network-with-user-accounts/
 - Heavily inspired by Speedtest-Tracker from @alexjustesen : https://github.com/alexjustesen/speedtest-tracker
 
-# CAUTION: BETA! This is not a fully release yet, I'm still working on v1.0
+## CAUTION: BETA! This is not a fully release yet, I'm still working on v1.0
 
 ## Docker compose file:
 ```yaml
