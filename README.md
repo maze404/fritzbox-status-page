@@ -1,7 +1,7 @@
 # FRITZ!Box Status Page
 A status page for AVM FRITZ!Box routers to easily check internet speed and availability
 
-![Example](example.png)
+![Example](https://raw.githubusercontent.com/maze404/fritzbox-status-page/refs/heads/main/.images/example.png)
 
 - written in Python 3.12.8 using NiceGUI and fritzconnection
 - only works with AVM FRTIZ!Box Routers!
