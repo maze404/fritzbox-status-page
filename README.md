@@ -22,12 +22,15 @@ services:
     container_name: fritzbox-status-page
     ports:
       - "8000:8080"
+    volumes:
+      - /YOUR/CUSTOM/PATH/config:/app/config #Optional, but will make the settings persistent
+      - /YOUR/CUSTOM/PATH/log:/app/log #Optional, except if you want to have a look at the logs
     restart: unless-stopped
 ```
 
 ## Docker run command:
 ```sh
-docker run -d --name fritzbox-status-page -p 8000:8080 ghcr.io/maze404/fritzbox-status-page:main
+docker run -d --name fritzbox-status-page -p 8000:8080 -v /YOUR/CUSTOM/PATH/config:/app/config -v /YOUR/CUSTOM/PATH/log:/app/log ghcr.io/maze404/fritzbox-status-page:main 
 ```
 
 ## Run without Docker:
@@ -39,7 +42,7 @@ docker run -d --name fritzbox-status-page -p 8000:8080 ghcr.io/maze404/fritzbox-
 5. Run `python -m venv .venv`
 6. Run `.\.venv\Scripts\Activate.ps1` in Windows, or `source .venv/bin/activate` in MacOS/Linux/Android/Amazon Fire TV Stick/etc.
 7. Run `pip install -r requirements.txt`
-8. Run `python3 main.py`
+8. Run `python3 bin/main.py`
 
 *This is highly unrecommended except you want to participate in developing this!*
 
