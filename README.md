@@ -39,7 +39,7 @@ docker run -d --name fritzbox-status-page -p 8000:8080 ghcr.io/maze404/fritzbox-
 5. Run `python -m venv .venv`
 6. Run `.\.venv\Scripts\Activate.ps1` in Windows, or `source .venv/bin/activate` in MacOS/Linux/Android/Amazon Fire TV Stick/etc.
 7. Run `pip install -r requirements.txt`
-8. Run `python3 gui.py`
+8. Run `python3 main.py`
 
 *This is highly unrecommended except you want to participate in developing this!*
 
