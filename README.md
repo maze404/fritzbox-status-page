@@ -1,10 +1,10 @@
 # FRITZ!Box Status Page
 A status page for AVM FRITZ!Box routers to easily check internet speed and availability
 
-![Example](.images/example-darkmode.png)
-![Example](.images/example-darkmode_settings.png)
-![Example](.images/example-lightmode.png)
-![Example](.images/example-lightmode_settings.png)
+Overview            |  Settings
+:-------------------------:|:-------------------------:
+<img src=".images/example-darkmode.png" width="500">  |  <img src=".images/example-darkmode_settings.png" width="500">
+<img src=".images/example-lightmode.png" width="500">  |  <img src=".images/example-lightmode_settings.png" width="500">
 
 - written in Python 3.12.8 using NiceGUI and fritzconnection
 - Heavily inspired by Speedtest-Tracker from @alexjustesen : https://github.com/alexjustesen/speedtest-tracker
