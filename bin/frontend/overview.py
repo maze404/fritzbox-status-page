@@ -28,46 +28,48 @@ class Overview:
         class IsFritzboxConnected:
             def create(self):
                 global is_fritzbox_connected
-                with ui.column().style('color: white; background-color: #333; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
-                    ui.label('Connected to the Internet').style('font-size: 1.25rem; font-weight: bold;')
-                    is_fritzbox_connected = ui.label('Loading...').style('font-size: 2rem; text-align: center;')
+                with ui.column().style('color: white; background-color:rgba(21, 120, 207, 0.18); border: solid 3px #1577cf; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
+                    ui.label('Connected to the Internet').style('font-size: 1.25rem; font-weight: bold; color: #1577cf')
+                    is_fritzbox_connected = ui.label('Loading...').style('font-size: 2rem; text-align: center; color: #1577cf')
             def set_text(self, text):
-                is_fritzbox_connected.set_text(text)
+                    is_fritzbox_connected.set_text(text)
         class DownloadSpeed:
             def create(self):
                 global download_speed
-                with ui.column().style('color: white; background-color: #333; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
-                    ui.label('Download Speed').style('font-size: 1.25rem; font-weight: bold;')
-                    download_speed = ui.label('Loading...').style('font-size: 2rem; text-align: center;')
+                with ui.column().style('color: white; background-color:rgba(21, 120, 207, 0.18); border: solid 3px #1577cf; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
+                    ui.label('Download Speed').style('font-size: 1.25rem; font-weight: bold; color: #1577cf')
+                    download_speed = ui.label('Loading...').style('font-size: 2rem; text-align: center; color: #1577cf')
             def set_text(self, text):
                 download_speed.set_text(text)
         class UploadSpeed:
             def create(self):
                 global upload_speed
-                with ui.column().style('color: white; background-color: #333; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
-                    ui.label('Upload Speed').style('font-size: 1.25rem; font-weight: bold;')
-                    upload_speed = ui.label('Loading...').style('font-size: 2rem; text-align: center;')
+                with ui.column().style('color: white; background-color:rgba(21, 120, 207, 0.18); border: solid 3px #1577cf; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
+                    ui.label('Upload Speed').style('font-size: 1.25rem; font-weight: bold; color: #1577cf')
+                    upload_speed = ui.label('Loading...').style('font-size: 2rem; text-align: center; color: #1577cf')
             def set_text(self, text):
                 upload_speed.set_text(text)
         class DnsAvailability:
             def create(self):
                 global is_dns_available
-                with ui.column().style('color: white; background-color: #333; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
-                    ui.label('DNS Availability').style('font-size: 1.25rem; font-weight: bold;')
-                    is_dns_available = ui.label('Loading...').style('font-size: 2rem; text-align: center;')
+                with ui.column().style('color: white; background-color:rgba(21, 120, 207, 0.18); border: solid 3px #1577cf; padding: 1em; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 19em;'):
+                    ui.label('DNS Availability').style('font-size: 1.25rem; font-weight: bold; color: #1577cf')
+                    is_dns_available = ui.label('Loading...').style('font-size: 2rem; text-align: center; color: #1577cf')
             def set_text(self, text):
-                is_dns_available.set_text(text)
+                    is_dns_available.set_text(text)
+
         def create_all(self):
             self.IsFritzboxConnected().create()
+            self.DnsAvailability().create()
             self.DownloadSpeed().create()
             self.UploadSpeed().create()
-            self.DnsAvailability().create()
+
         def edit_all(self, value_is_fritzbox_connected, value_download_speed, value_upload_speed, value_is_dns_available):
             try:
                 is_fritzbox_connected.set_text(value_is_fritzbox_connected)
+                is_dns_available.set_text(value_is_dns_available)
                 download_speed.set_text(value_download_speed)
                 upload_speed.set_text(value_upload_speed)
-                is_dns_available.set_text(value_is_dns_available)
             except Exception as e:
                 logger.log(f'Error updating info cards: {e}', 'ERROR')
                 return False
