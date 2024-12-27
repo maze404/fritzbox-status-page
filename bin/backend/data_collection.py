@@ -1,6 +1,6 @@
 import requests
 from fritzconnection.lib.fritzstatus import FritzStatus
-from .logging import Logging
+from .gui_logging import Logging
 
 logger = Logging()
 

@@ -1,5 +1,5 @@
 from nicegui import ui
-from backend.logging import Logging
+from backend.gui_logging import Logging
 from frontend.overview import Overview
 from frontend.settings import Settings
 import os, json

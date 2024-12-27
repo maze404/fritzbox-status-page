@@ -1,7 +1,7 @@
 import json, os, threading, time
 from nicegui import ui
 from backend.data_collection import generalInformation, fritzboxInformation
-from backend.logging import Logging
+from backend.gui_logging import Logging
 
 logger = Logging()
 
