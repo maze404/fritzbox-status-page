@@ -11,6 +11,8 @@ mysql = MySQLDatabase()
 class Overview:
     def __init__(self):
         self.database_path = str(os.path.join("config", "database.db"))
+        if not os.path.exists(self.database_path):
+            sqldb.initialSetup(self.database_path)
         if not EnvironmentVariables.check('DB_MODE','DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASSWORD'):
             logger.log("Environment variables not complete, defaulting to standard values")
             self.db_mode = "sqlite"
