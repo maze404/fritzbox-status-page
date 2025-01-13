@@ -6,14 +6,11 @@ from backend.database import MySQLDatabase, SQLiteDatabase, EnvironmentVariables
 
 logger = Logging()
 sqldb = SQLiteDatabase()
-mysql = MySQLDatabase()
+mysqldb = MySQLDatabase()
 
 class Overview:
     def __init__(self):
-        self.database_path = str(os.path.join("config", "database.db"))
-        if not os.path.exists(self.database_path):
-            sqldb.initialSetup(self.database_path)
-        if not EnvironmentVariables.check('DB_MODE','DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASSWORD'):
+        if not os.environ.get('DB_MODE') == 'mysql':
             logger.log("Environment variables not complete, defaulting to standard values")
             self.db_mode = "sqlite"
             self.db_name = "database.db"
@@ -26,7 +23,9 @@ class Overview:
             self.db_pass = os.environ.get('DB_PASSWORD')
 
         if self.db_mode == 'sqlite':
-            self.database_path = str(os.path.join("config", "database.db"))
+            self.database_path = str(os.path.join("config", self.db_name))
+            if not os.path.exists(self.database_path):
+                sqldb.initialSetup(self.database_path)
             sqldb.connect(self.database_path)
             self.address = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
             self.username = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
@@ -34,6 +33,18 @@ class Overview:
             self.domain = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
             self.refresh_interval = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
             sqldb.disconnect()
+        elif self.db_mode == 'mysql':
+            self.database_path = str(os.path.join("config", "mysql"))
+            if not os.path.exists(self.database_path):
+                mysqldb.initialSetup(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
+            mysqldb.connect(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
+            #self.address = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
+            #print(mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address';")[0])
+            #self.username = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
+            #self.password = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
+            #self.domain = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
+            #self.refresh_interval = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
+            mysqldb.disconnect
 
     class InfoCards:
         global is_fritzbox_connected, download_speed, upload_speed, is_dns_available
@@ -97,8 +108,8 @@ class Overview:
             with ui.row().style('display: flex; flex-wrap: wrap; justify-content: center; flex-direction: row;'):
                 if os.path.exists(self.database_path):
                     self.InfoCards().create_all()
-                    threading.Thread(target=self.refresh_data, daemon=True).start()
-                    threading.Thread(target=self.gather_data).start()
+                    #threading.Thread(target=self.refresh_data, daemon=True).start()
+                    #threading.Thread(target=self.gather_data).start()
                 else:
                     self.InfoCards().create_all()
                     ui.notify('Please configure the settings first!', color='red', type='negative', close_button='Understood', timeout=0)

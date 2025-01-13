@@ -10,7 +10,7 @@ mysql = MySQLDatabase()
 
 class Settings:
     def loadVariables(self):
-        if not EnvironmentVariables.check('DB_MODE','DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASSWORD'):
+        if not os.environ.get('DB_MODE') == 'mysql':
             logger.log("Environment variables not complete, defaulting to standard values")
             self.db_mode = "sqlite"
             self.db_name = "database.db"
@@ -34,7 +34,6 @@ class Settings:
                 ui.label('General settings').style('font-size: 2rem; font-weight: bold; color: white; padding: 0.25em; background-color: #1577cf; border-radius: 8px 8px 0px 8px; margin-bottom: -8px;')
             with ui.row().style('display: flex; flex-wrap: wrap; justify_content: left; flex-direction: row;'):
                 with ui.list().style('width: 100%;'):
-
                     self.loadVariables()
                     if self.db_mode == 'sqlite':
                         self.database_path = str(os.path.join("config", "database.db"))
@@ -47,6 +46,16 @@ class Settings:
                         self.domain_value = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
                         self.refresh_interval = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
                         sqldb.disconnect()
+                    elif self.db_mode == 'mysql':
+                        mysql.connect(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
+                        print(mysql.fetch_all('SELECT * FROM settings'))
+                        return
+                        #self.address = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
+                        #self.username = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
+                        #self.password = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
+                        #self.domain = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
+                        #self.refresh_interval = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
+                        mysql.disconnect()
 
                     address = create_settings_item('FRITZ!Box Address', self.address_value)
                     username = create_settings_item('Fritz!Box User', self.username_value)
@@ -101,6 +110,14 @@ class Settings:
                 sqldb.execute_query(f"UPDATE settings SET value = '{domain}' WHERE name LIKE 'fritzbox_dns_check_domain';")
                 sqldb.execute_query(f"UPDATE settings SET value = '{refresh_interval}' WHERE name LIKE 'refresh_interval';")
                 sqldb.disconnect()
+            elif self.db_mode == 'mysql':
+                mysql.connect(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
+                mysql.execute_query(f"UPDATE settings SET value = '{address}' WHERE name LIKE 'fritzbox_address';")
+                mysql.execute_query(f"UPDATE settings SET value = '{username}' WHERE name LIKE 'fritzbox_user';")
+                mysql.execute_query(f"UPDATE settings SET value = '{password}' WHERE name LIKE 'fritzbox_password';")
+                mysql.execute_query(f"UPDATE settings SET value = '{domain}' WHERE name LIKE 'fritzbox_dns_check_domain';")
+                mysql.execute_query(f"UPDATE settings SET value = '{refresh_interval}' WHERE name LIKE 'refresh_interval';")
+                mysql.disconnect()
             Overview().reload(refresh_interval)
             ui.notify('Settings saved', color='green', type='positive')
             logger.log('Settings saved', 'SUCCESS')
