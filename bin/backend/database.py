@@ -1,5 +1,8 @@
 import mysql.connector
 from mysql.connector import Error
+from backend.gui_logging import Logging
+
+logger = Logging()
 
 class MySQLDatabase:
     def connect(self, host, database, user, password):
@@ -16,27 +19,27 @@ class MySQLDatabase:
                 database=self.database
             )
             if self.connection.is_connected():
-                print("Successfully connected to the database")
+                logger.log("Successfully connected to the database", "INFO")
         except Error as e:
-            print(f"Error: {e}")
+            logger.log(f"Error: {e}", "ERROR")
             self.connection = None
 
     def disconnect(self):
         if self.connection is not None and self.connection.is_connected():
             self.connection.close()
-            print("Database connection closed")
+            logger.log("Database connection closed", "INFO")
 
     def execute_query(self, query, params=None):
         if self.connection is None or not self.connection.is_connected():
-            print("Not connected to the database")
+            logger.log("Not connected to the database", "WARNING")
             return None
         cursor = self.connection.cursor()
         try:
             cursor.execute(query, params)
             self.connection.commit()
-            print("Query executed successfully")
+            logger.log("Query executed successfully", "INFO")
         except Error as e:
-            print(f"Error: {e}")
+            logger.log(f"Error: {e}", "ERROR")
             return None
         return cursor
 
@@ -58,12 +61,15 @@ class MySQLDatabase:
             cursor.execute(command)
             self.connection.commit()
         except Exception as e:
-            print(f"Error: {e}")
+            logger.log(f"Error: {e}", "ERROR")
         else:
-            print(f"SUCCESS: {command}")
+            logger.log(f"SUCCESS: {command}", "SUCCESS")
 
-    def initialSetup(host, database, user, password):
-        MySQLDatabase.connect(self=MySQLDatabase, host=host, database=database, user=user, password=password)
-        MySQLDatabase.execute(self=MySQLDatabase, command="CREATE TABLE IF NOT EXISTS settings (name VARCHAR(255) NOT NULL, value VARCHAR(255) NOT NULL, PRIMARY KEY (name));")
-        MySQLDatabase.execute(self=MySQLDatabase, command="CREATE TABLE IF NOT EXISTS router_transfer_speed (time TIME NOT NULL, upload FLOAT NOT NULL, download FLOAT NOT NULL, PRIMARY KEY (time));")
-        MySQLDatabase.disconnect(self=MySQLDatabase)
+
+MySQLDatabase.connect(MySQLDatabase, host='192.168.178.33', database='fritzbox-status-page', user='fritzbox-status-page', password='dutimopt')
+MySQLDatabase().execute(command="CREATE TABLE IF NOT EXISTS settings (name VARCHAR(255) NOT NULL, value VARCHAR(255) NOT NULL, PRIMARY KEY (name));")
+MySQLDatabase().execute(command="INSERT INTO `settings`(`name`, `value`) VALUES ('fritzbox_address','192.168.178.1');")
+MySQLDatabase().execute(command="INSERT INTO `settings`(`name`, `value`) VALUES ('username','api-user');")
+MySQLDatabase().execute(command="INSERT INTO `settings`(`name`, `value`) VALUES ('password','51605728531983842826');")
+MySQLDatabase().execute(command="INSERT INTO `settings`(`name`, `value`) VALUES ('domain','60');")
+MySQLDatabase().disconnect()
