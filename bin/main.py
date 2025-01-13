@@ -58,7 +58,4 @@ class Menu:
                 darkmode=ui.dark_mode()
                 ui.switch('Dark Mode', value=darkmode.value, on_change=lambda: darkmode.toggle())
 
-if not os.path.exists('config'):
-    os.makedirs('config')
-
 Website.create_overview()

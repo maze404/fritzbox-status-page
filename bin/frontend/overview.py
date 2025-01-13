@@ -2,26 +2,36 @@ import json, os, threading, time
 from nicegui import ui
 from backend.data_collection import generalInformation, fritzboxInformation
 from backend.gui_logging import Logging
+from backend.database import MySQLDatabase, SQLiteDatabase, EnvironmentVariables
 
 logger = Logging()
+sqldb = SQLiteDatabase()
+mysql = MySQLDatabase()
 
 class Overview:
     def __init__(self):
-        self.settings_dir = 'config'
-        self.settings_path = os.path.join(self.settings_dir, 'settings.json')
-        self._ensure_settings_dir_exists()
-        if os.path.exists(self.settings_path):
-            with open(self.settings_path, 'r') as json_file:
-                settings = json.load(json_file)
-                self.address = settings.get('address', '')
-                self.username = settings.get('username', '')
-                self.password = settings.get('password', '')
-                self.domain = settings.get('domain', '')
-                self.refresh_interval = settings.get('refresh_interval', '')
+        self.database_path = str(os.path.join("config", "database.db"))
+        if not EnvironmentVariables.check('DB_MODE','DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASSWORD'):
+            logger.log("Environment variables not complete, defaulting to standard values")
+            self.db_mode = "sqlite"
+            self.db_name = "database.db"
+        else:
+            self.db_mode = os.environ.get('DB_MODE')
+            self.db_host = os.environ.get('DB_HOST')
+            self.db_port = os.environ.get('DB_PORT')
+            self.db_name = os.environ.get('DB_NAME')
+            self.db_user = os.environ.get('DB_USER')
+            self.db_pass = os.environ.get('DB_PASSWORD')
 
-    def _ensure_settings_dir_exists(self):
-        if not os.path.exists(self.settings_dir):
-            os.makedirs(self.settings_dir)
+        if self.db_mode == 'sqlite':
+            self.database_path = str(os.path.join("config", "database.db"))
+            sqldb.connect(self.database_path)
+            self.address = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
+            self.username = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
+            self.password = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
+            self.domain = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
+            self.refresh_interval = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
+            sqldb.disconnect()
 
     class InfoCards:
         global is_fritzbox_connected, download_speed, upload_speed, is_dns_available
@@ -83,7 +93,7 @@ class Overview:
                 ui.label('Overview').style('font-size: 2rem; font-weight: bold; color: white; padding: 0.25em; background-color: #1577cf; border-radius: 8px 8px 0px 8px; margin-bottom: -8px;')
 
             with ui.row().style('display: flex; flex-wrap: wrap; justify-content: center; flex-direction: row;'):
-                if os.path.exists(self.settings_path):
+                if os.path.exists(self.database_path):
                     self.InfoCards().create_all()
                     threading.Thread(target=self.refresh_data, daemon=True).start()
                     threading.Thread(target=self.gather_data).start()
@@ -93,7 +103,7 @@ class Overview:
                     logger.log('Please configure the settings first!', 'ERROR')
 
     def gather_data(self):
-        if os.path.exists(self.settings_path):
+        if os.path.exists(self.database_path):
             logger.log('------------------------------------------')
             logger.log('Collecting data...')
             fritzbox = fritzboxInformation()
@@ -118,9 +128,7 @@ class Overview:
 
     def refresh_data(self):
         while True:
-            with open(self.settings_path, 'r') as json_file:
-                settings = json.load(json_file)
-                refresh_time = settings.get('refresh_interval', '')
+            refresh_time = int(self.refresh_interval)
             threading.Thread(target=self.gather_data).start()
             time.sleep(refresh_time)
 
