@@ -4,6 +4,7 @@ settings.json
 .vscode
 log
 config
+bin/env_var.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

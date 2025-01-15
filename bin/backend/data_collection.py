@@ -1,6 +1,6 @@
-import requests
+import requests, os, re
 from fritzconnection.lib.fritzstatus import FritzStatus
-from .logging import Logging
+from backend.gui_logging import Logging
 
 logger = Logging()
 
@@ -18,6 +18,15 @@ class generalInformation():
         else:
             logger.log(f'Domain check for {self.checkDomain} completed: Code {response.status_code}', 'SUCCESSFUL')
             return response.status_code == 200
+
+    def ping(self, host):
+        try:
+            result = os.popen(fr"ping -c 3 {host}" + "| tail -1| awk '{print $4}' | cut -d '/' -f 2").read()
+            response = re.match(r'[\d.]+', result).group()
+        except Exception as e:
+            logger.log(f'{e}', 'ERROR')
+        else:
+            return response
 
 class fritzboxInformation:
     def __init__(self):

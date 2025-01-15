@@ -1,27 +1,50 @@
-import json, os, threading, time
+import os, threading, time
+from datetime import datetime
 from nicegui import ui
 from backend.data_collection import generalInformation, fritzboxInformation
-from backend.logging import Logging
+from backend.gui_logging import Logging
+from backend.database import MySQLDatabase, SQLiteDatabase
 
 logger = Logging()
+sqldb = SQLiteDatabase()
+mysqldb = MySQLDatabase()
 
 class Overview:
     def __init__(self):
-        self.settings_dir = 'config'
-        self.settings_path = os.path.join(self.settings_dir, 'settings.json')
-        self._ensure_settings_dir_exists()
-        if os.path.exists(self.settings_path):
-            with open(self.settings_path, 'r') as json_file:
-                settings = json.load(json_file)
-                self.address = settings.get('address', '')
-                self.username = settings.get('username', '')
-                self.password = settings.get('password', '')
-                self.domain = settings.get('domain', '')
-                self.refresh_interval = settings.get('refresh_interval', '')
+        if not os.environ.get('DB_MODE') == 'mysql':
+            logger.log("Environment variables not complete, defaulting to standard values")
+            self.db_mode = "sqlite"
+            self.db_name = "database.db"
+        else:
+            self.db_mode = os.environ.get('DB_MODE')
+            self.db_host = os.environ.get('DB_HOST')
+            self.db_port = os.environ.get('DB_PORT')
+            self.db_name = os.environ.get('DB_NAME')
+            self.db_user = os.environ.get('DB_USER')
+            self.db_pass = os.environ.get('DB_PASSWORD')
 
-    def _ensure_settings_dir_exists(self):
-        if not os.path.exists(self.settings_dir):
-            os.makedirs(self.settings_dir)
+        if self.db_mode == 'sqlite':
+            self.database_path = str(os.path.join("config", self.db_name))
+            if not os.path.exists(self.database_path):
+                sqldb.initialSetup(self.database_path)
+            sqldb.connect(self.database_path)
+            self.address = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
+            self.username = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
+            self.password = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
+            self.domain = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
+            self.refresh_interval = sqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
+            sqldb.disconnect()
+        elif self.db_mode == 'mysql':
+            self.database_path = str(os.path.join("config", "mysql"))
+            if not os.path.exists(self.database_path):
+                mysqldb.initialSetup(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
+            mysqldb.connect(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
+            self.address = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
+            self.username = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
+            self.password = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
+            self.domain = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
+            self.refresh_interval = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
+            mysqldb.disconnect
 
     class InfoCards:
         global is_fritzbox_connected, download_speed, upload_speed, is_dns_available
@@ -83,34 +106,47 @@ class Overview:
                 ui.label('Overview').style('font-size: 2rem; font-weight: bold; color: white; padding: 0.25em; background-color: #1577cf; border-radius: 8px 8px 0px 8px; margin-bottom: -8px;')
 
             with ui.row().style('display: flex; flex-wrap: wrap; justify-content: center; flex-direction: row;'):
-                if os.path.exists(self.settings_path):
+                if os.path.exists(self.database_path):
                     self.InfoCards().create_all()
                     threading.Thread(target=self.refresh_data, daemon=True).start()
-                    threading.Thread(target=self.gather_data).start()
                 else:
                     self.InfoCards().create_all()
                     ui.notify('Please configure the settings first!', color='red', type='negative', close_button='Understood', timeout=0)
                     logger.log('Please configure the settings first!', 'ERROR')
 
     def gather_data(self):
-        if os.path.exists(self.settings_path):
+        if os.path.exists(self.database_path):
             logger.log('------------------------------------------')
             logger.log('Collecting data...')
             fritzbox = fritzboxInformation()
             generalInfo = generalInformation()
             try:
                 fritzbox.connect(self.address, self.username, self.password)
+                fb_internet_connection = str(fritzbox.check_fritzbox_internet_connection())
+                fb_download_speed = fritzbox.get_download_speed()
+                fb_upload_speed = fritzbox.get_upload_speed()
+                fb_dns_available = str(generalInfo.checkInternetConnectivity(self.domain))
+                fb_ping = generalInfo.ping(self.domain)
+                datetime_raw = datetime.now()
+                current_date = datetime_raw.strftime(r'%Y-%m-%d')
+                current_time = datetime_raw.strftime(r'%H:%M:%S')
                 try:
                     self.InfoCards().edit_all(
-                        str(fritzbox.check_fritzbox_internet_connection()),
-                        fritzbox.get_download_speed(),
-                        fritzbox.get_upload_speed(),
-                        str(generalInfo.checkInternetConnectivity(self.domain))
+                        fb_internet_connection,
+                        fb_download_speed,
+                        fb_upload_speed,
+                        fb_dns_available
                         )
                 except Exception as e:
                     logger.log(f'Error: {e}', 'ERROR')
                 else:
                     logger.log('Collected data', 'SUCCESSFUL')
+                try:
+                    mysqldb.execute_query(f"INSERT INTO speedtest (UID, date, time, upload, download, ping) VALUES (UUID_SHORT(), '{current_date}', '{current_time}', '{fb_upload_speed}', '{fb_download_speed}', '{fb_ping}');")
+                except Exception as e:
+                    logger.log(f'Error: {e}', 'ERROR')
+                else:
+                    logger.log('Written newest data to database', 'SUCCESSFUL')
             except Exception as e:
                 logger.log(f'Error connecting to Fritzbox: {e}', 'ERROR')
             else:
@@ -118,9 +154,7 @@ class Overview:
 
     def refresh_data(self):
         while True:
-            with open(self.settings_path, 'r') as json_file:
-                settings = json.load(json_file)
-                refresh_time = settings.get('refresh_interval', '')
+            refresh_time = int(self.refresh_interval)
             threading.Thread(target=self.gather_data).start()
             time.sleep(refresh_time)
 

@@ -15,6 +15,7 @@ class Logging:
     def log(self, message: str, status: str = 'INFO'):
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
         log_message = f'[{timestamp}] [{status}] {message}\n'
+        print(f'[{timestamp}] [{status}] {message}')
         self._rotate_logs()
         with open(self.log_file, 'a') as log_file:
             log_file.write(log_message)

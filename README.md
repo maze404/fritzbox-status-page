@@ -1,4 +1,5 @@
 # FRITZ!Box Status Page
+
 A status page for AVM FRITZ!Box routers to easily check internet speed and availability
 
 Overview            |  Settings
@@ -6,18 +7,18 @@ Overview            |  Settings
 <img src=".images/example-darkmode.png" width="500">  |  <img src=".images/example-darkmode_settings.png" width="500">
 <img src=".images/example-lightmode.png" width="500">  |  <img src=".images/example-lightmode_settings.png" width="500">
 
-- written in Python 3.12.8 using NiceGUI and fritzconnection
-- Heavily inspired by Speedtest-Tracker from @alexjustesen : https://github.com/alexjustesen/speedtest-tracker
+- written in Python 3.13.1 using NiceGUI and fritzconnection
+- Heavily inspired by Speedtest-Tracker from @alexjustesen : <https://github.com/alexjustesen/speedtest-tracker>
 
-### CAUTION: BETA! You've been warned (works pretty well though)
+## Requirements
 
-## Requirements:
 - AVM FRITZ!Box router
-    - A dedicated user account for connecting to the router via API: https://en.avm.de/service/knowledge-base/dok/FRITZ-Box-7590/1522_Accessing-FRITZ-Box-from-the-home-network-with-user-accounts/
+  - A dedicated user account for connecting to the router via API: <https://en.avm.de/service/knowledge-base/dok/FRITZ-Box-7590/1522_Accessing-FRITZ-Box-from-the-home-network-with-user-accounts/>
 - Docker or docker compose
 - x86 or ARM CPU
 
-## Docker compose file:
+## Docker compose file
+
 ```yaml
 services:
   fritzbox-status-page:
@@ -25,32 +26,42 @@ services:
     container_name: fritzbox-status-page
     ports:
       - "8000:8080"
+    environment:
+      - DB_MODE=
+      - DB_HOST=
+      - DB_PORT=
+      - DB_NAME=
+      - DB_USER=
+      - DB_PASSWORD=
     volumes:
       - /YOUR/CUSTOM/PATH/config:/app/config #Optional, but will make the settings persistent
       - /YOUR/CUSTOM/PATH/log:/app/log #Optional, except if you want to have a look at the logs
     restart: unless-stopped
 ```
 
-## Docker run command:
+The environment variables are generally optional. If you choose to remove them or leave them empty, then the program will default to an internal sqlite database.
+
+If you do want to use the environment variables, then you have the following options:
+
+- `DB_MODE`: `sqlite` or `mysql`. Sqlite will make all other environment variables obsolete!
+- `DB_HOST`: The IP address of the *mysql* database
+- `DB_PORT`: The port for mysql (`3306` by default)
+- `DB_NAME`: Name of the mysql database
+- `DB_USER`: Username for the mysql database
+- `DB_PASSWORD`: Password for the above mentioned database user.
+
+The program will setup the database on its own on the first start. If you are still using a version that was using a settings.json file, then you will have to re-enter your router connection information in the settings.
+
+## Docker run command
+
 ```sh
-docker run -d --name fritzbox-status-page -p 8000:8080 -v /YOUR/CUSTOM/PATH/config:/app/config -v /YOUR/CUSTOM/PATH/log:/app/log ghcr.io/maze404/fritzbox-status-page:main 
+docker run -d --name fritzbox-status-page -p 8000:8080 -v /YOUR/CUSTOM/PATH/config:/app/config -v /YOUR/CUSTOM/PATH/log:/app/log ghcr.io/maze404/fritzbox-status-page:main
 ```
 
-## Run without Docker:
-*(Seriously why would you do that...)*
-1. Download this repository
-2. Make sure you have Python 3.12.8 installed
-3. Upack the downloaded .zip folder and navigate into that folder using the commandline
-4. Install Python 3.12.8 (https://www.python.org/downloads/release/python-3128/)
-5. Run `python -m venv .venv`
-6. Run `.\.venv\Scripts\Activate.ps1` in Windows, or `source .venv/bin/activate` in MacOS/Linux/Android/Amazon Fire TV Stick/etc.
-7. Run `pip install -r requirements.txt`
-8. Run `python3 bin/main.py`
+*I highly advise to use the docker-compose file above as the docker run command is really only suited in case you don't want to use an external database.*
 
-*This is highly unrecommended except you want to participate in developing this!*
+## ToDo's
 
-
-## ToDo's:
 - [x] Show if the router is currently connnected to the internet
 - [x] Show upload and download speed
 - [x] Show if DNS is working
@@ -61,10 +72,12 @@ docker run -d --name fritzbox-status-page -p 8000:8080 -v /YOUR/CUSTOM/PATH/conf
 - [x] Toggle darkmode on/off
 - [x] After setup, make top left logo redirect to router webinterface
 - [x] Refine the UI for light/darkmode usage and readability
-- [ ] Show Diagrams for keeping track of the upload and download speeds (Idea taken from https://github.com/alexjustesen/speedtest-tracker )
+- [x] Add support for mysql and sqlite databases
+- [x] Remove settings.json and fully switch to databases
+- [ ] Show Diagrams for keeping track of the upload and download speeds (Idea taken from <https://github.com/alexjustesen/speedtest-tracker> )
 - [ ] Show router log messages on extra page
 - [ ] Add a button to restart the router if needed
-    - [ ] Add an option to restart the router as soon as it looses internet connection
+  - [ ] Add an option to restart the router as soon as it looses internet connection
 - [ ] Add a button to enable or disable the router's wifi
 
 I'm sorry if the code is messy, this is my first project in python and i have little to no clue about object orientation :)

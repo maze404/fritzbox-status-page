@@ -1,5 +1,5 @@
 from nicegui import ui
-from backend.logging import Logging
+from backend.gui_logging import Logging
 from frontend.overview import Overview
 from frontend.settings import Settings
 import os, json
@@ -57,8 +57,5 @@ class Menu:
                     ui.image('https://cdn.freebiesupply.com/logos/large/2x/github-icon-1-logo-black-and-white.png').style('filter: invert(1);').classes('w-8')
                 darkmode=ui.dark_mode()
                 ui.switch('Dark Mode', value=darkmode.value, on_change=lambda: darkmode.toggle())
-
-if not os.path.exists('config'):
-    os.makedirs('config')
 
 Website.create_overview()
