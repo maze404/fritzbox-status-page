@@ -1,10 +1,10 @@
 # FRITZ!Box Status Page
 A status page for AVM FRITZ!Box routers to easily check internet speed and availability
 
-![Example](.images/example-darkmode.png)
-![Example](.images/example-darkmode_settings.png)
-![Example](.images/example-lightmode.png)
-![Example](.images/example-lightmode_settings.png)
+Overview            |  Settings
+:-------------------------:|:-------------------------:
+<img src=".images/example-darkmode.png" width="500">  |  <img src=".images/example-darkmode_settings.png" width="500">
+<img src=".images/example-lightmode.png" width="500">  |  <img src=".images/example-lightmode_settings.png" width="500">
 
 - written in Python 3.12.8 using NiceGUI and fritzconnection
 - Heavily inspired by Speedtest-Tracker from @alexjustesen : https://github.com/alexjustesen/speedtest-tracker
@@ -25,12 +25,15 @@ services:
     container_name: fritzbox-status-page
     ports:
       - "8000:8080"
+    volumes:
+      - /YOUR/CUSTOM/PATH/config:/app/config #Optional, but will make the settings persistent
+      - /YOUR/CUSTOM/PATH/log:/app/log #Optional, except if you want to have a look at the logs
     restart: unless-stopped
 ```
 
 ## Docker run command:
 ```sh
-docker run -d --name fritzbox-status-page -p 8000:8080 ghcr.io/maze404/fritzbox-status-page:main
+docker run -d --name fritzbox-status-page -p 8000:8080 -v /YOUR/CUSTOM/PATH/config:/app/config -v /YOUR/CUSTOM/PATH/log:/app/log ghcr.io/maze404/fritzbox-status-page:main 
 ```
 
 ## Run without Docker:
@@ -42,7 +45,7 @@ docker run -d --name fritzbox-status-page -p 8000:8080 ghcr.io/maze404/fritzbox-
 5. Run `python -m venv .venv`
 6. Run `.\.venv\Scripts\Activate.ps1` in Windows, or `source .venv/bin/activate` in MacOS/Linux/Android/Amazon Fire TV Stick/etc.
 7. Run `pip install -r requirements.txt`
-8. Run `python3 main.py`
+8. Run `python3 bin/main.py`
 
 *This is highly unrecommended except you want to participate in developing this!*
 
