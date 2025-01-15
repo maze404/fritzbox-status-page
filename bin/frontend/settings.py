@@ -48,13 +48,11 @@ class Settings:
                         sqldb.disconnect()
                     elif self.db_mode == 'mysql':
                         mysql.connect(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
-                        print(mysql.fetch_all('SELECT * FROM settings'))
-                        return
-                        #self.address = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
-                        #self.username = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
-                        #self.password = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
-                        #self.domain = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
-                        #self.refresh_interval = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
+                        self.address_value = mysql.fetch_one("SELECT value FROM settings WHERE name = 'fritzbox_address'")[0]
+                        self.username_value = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
+                        self.password_value = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
+                        self.domain_value = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
+                        self.refresh_interval = mysql.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
                         mysql.disconnect()
 
                     address = create_settings_item('FRITZ!Box Address', self.address_value)

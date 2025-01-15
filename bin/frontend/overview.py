@@ -1,8 +1,9 @@
-import json, os, threading, time
+import os, threading, time
+from datetime import datetime
 from nicegui import ui
 from backend.data_collection import generalInformation, fritzboxInformation
 from backend.gui_logging import Logging
-from backend.database import MySQLDatabase, SQLiteDatabase, EnvironmentVariables
+from backend.database import MySQLDatabase, SQLiteDatabase
 
 logger = Logging()
 sqldb = SQLiteDatabase()
@@ -38,12 +39,11 @@ class Overview:
             if not os.path.exists(self.database_path):
                 mysqldb.initialSetup(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
             mysqldb.connect(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
-            #self.address = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
-            #print(mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address';")[0])
-            #self.username = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
-            #self.password = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
-            #self.domain = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
-            #self.refresh_interval = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
+            self.address = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_address'")[0]
+            self.username = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_user'")[0]
+            self.password = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'fritzbox_password'")[0]
+            self.domain = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'dns_check_domain'")[0]
+            self.refresh_interval = mysqldb.fetch_one("SELECT value FROM settings WHERE name LIKE 'refresh_interval'")[0]
             mysqldb.disconnect
 
     class InfoCards:
@@ -108,8 +108,7 @@ class Overview:
             with ui.row().style('display: flex; flex-wrap: wrap; justify-content: center; flex-direction: row;'):
                 if os.path.exists(self.database_path):
                     self.InfoCards().create_all()
-                    #threading.Thread(target=self.refresh_data, daemon=True).start()
-                    #threading.Thread(target=self.gather_data).start()
+                    threading.Thread(target=self.refresh_data, daemon=True).start()
                 else:
                     self.InfoCards().create_all()
                     ui.notify('Please configure the settings first!', color='red', type='negative', close_button='Understood', timeout=0)
@@ -123,17 +122,31 @@ class Overview:
             generalInfo = generalInformation()
             try:
                 fritzbox.connect(self.address, self.username, self.password)
+                fb_internet_connection = str(fritzbox.check_fritzbox_internet_connection())
+                fb_download_speed = fritzbox.get_download_speed()
+                fb_upload_speed = fritzbox.get_upload_speed()
+                fb_dns_available = str(generalInfo.checkInternetConnectivity(self.domain))
+                fb_ping = generalInfo.ping(self.domain)
+                datetime_raw = datetime.now()
+                current_date = datetime_raw.strftime(r'%Y-%m-%d')
+                current_time = datetime_raw.strftime(r'%H:%M:%S')
                 try:
                     self.InfoCards().edit_all(
-                        str(fritzbox.check_fritzbox_internet_connection()),
-                        fritzbox.get_download_speed(),
-                        fritzbox.get_upload_speed(),
-                        str(generalInfo.checkInternetConnectivity(self.domain))
+                        fb_internet_connection,
+                        fb_download_speed,
+                        fb_upload_speed,
+                        fb_dns_available
                         )
                 except Exception as e:
                     logger.log(f'Error: {e}', 'ERROR')
                 else:
                     logger.log('Collected data', 'SUCCESSFUL')
+                try:
+                    mysqldb.execute_query(f"INSERT INTO speedtest (UID, date, time, upload, download, ping) VALUES (UUID_SHORT(), '{current_date}', '{current_time}', '{fb_upload_speed}', '{fb_download_speed}', '{fb_ping}');")
+                except Exception as e:
+                    logger.log(f'Error: {e}', 'ERROR')
+                else:
+                    logger.log('Written newest data to database', 'SUCCESSFUL')
             except Exception as e:
                 logger.log(f'Error connecting to Fritzbox: {e}', 'ERROR')
             else:

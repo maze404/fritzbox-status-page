@@ -29,7 +29,7 @@ class MySQLDatabase:
                 auth_plugin='mysql_native_password'
             )
             if self.connection.is_connected():
-                logger.log("Successfully connected to the database", "SUCCESS")
+                logger.log("Successfully connected to the database ", "SUCCESS")
         except Error as e:
             logger.log(f"{e}", "ERROR")
             self.connection = None
@@ -44,11 +44,11 @@ class MySQLDatabase:
         if self.connection is None:
             logger.log("Not connected to the database", "ERROR")
             return None
-        cursor = self.connection.cursor()
+        cursor = self.connection.cursor(buffered=True)
         try:
             cursor.execute(query, params)
             self.connection.commit()
-            logger.log("Query executed successfully", "INFO")
+            logger.log(f"Query executed successfully: '{query}'", "INFO")
         except Error as e:
             logger.log(f"{e}", "ERROR")
             return None
@@ -66,25 +66,16 @@ class MySQLDatabase:
             return cursor.fetchone()
         return None
 
-    def execute(self, command):
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(command)
-            self.connection.commit()
-        except Exception as e:
-            logger.log(f"{e}", "ERROR")
-        else:
-            logger.log(f"{command}", "SUCCESS")
-
     def initialSetup(self, host, port, database, user, password):
-        MySQLDatabase.connect(self=MySQLDatabase, host=host, port=port, database=database, user=user, password=password)
-        MySQLDatabase.execute_query(MySQLDatabase, query="CREATE TABLE IF NOT EXISTS settings (name TEXT NOT NULL, value TEXT, PRIMARY KEY (name));")
-        MySQLDatabase.execute_query(MySQLDatabase, query="INSERT INTO settings (name, value) VALUES ('fritzbox_address', '');")
-        MySQLDatabase.execute_query(MySQLDatabase, query="INSERT INTO settings (name, value) VALUES ('fritzbox_user', '');")
-        MySQLDatabase.execute_query(MySQLDatabase, query="INSERT INTO settings (name, value) VALUES ('fritzbox_password', '');")
-        MySQLDatabase.execute_query(MySQLDatabase, query="INSERT INTO settings (name, value) VALUES ('dns_check_domain', 'google.com');")
-        MySQLDatabase.execute_query(MySQLDatabase, query="INSERT INTO settings (name, value) VALUES ('refresh_interval', '60');")
-        MySQLDatabase.disconnect(MySQLDatabase)
+        self.connect(host=host, port=port, database=database, user=user, password=password)
+        self.execute_query(query="CREATE TABLE IF NOT EXISTS settings (name TEXT NOT NULL , value TEXT NULL , PRIMARY KEY (name(255)));")
+        self.execute_query(query="CREATE TABLE speedtest (UID VARCHAR(255) NOT NULL , date DATE NOT NULL , time TIME(6) NOT NULL , upload INT NOT NULL , download INT NOT NULL , ping DECIMAL(65) NOT NULL , UNIQUE (UID(255)))")
+        self.execute_query(query="INSERT INTO settings (name, value) VALUES ('fritzbox_address', '');")
+        self.execute_query(query="INSERT INTO settings (name, value) VALUES ('fritzbox_user', '');")
+        self.execute_query(query="INSERT INTO settings (name, value) VALUES ('fritzbox_password', '');")
+        self.execute_query(query="INSERT INTO settings (name, value) VALUES ('dns_check_domain', 'google.com');")
+        self.execute_query(query="INSERT INTO settings (name, value) VALUES ('refresh_interval', '60');")
+        self.disconnect()
         Path(os.path.join('config', 'mysql')).touch()
 
 class SQLiteDatabase:
@@ -142,6 +133,7 @@ class SQLiteDatabase:
     def initialSetup(self, database):
         SQLiteDatabase.connect(SQLiteDatabase, database)
         SQLiteDatabase.execute(SQLiteDatabase, command="CREATE TABLE IF NOT EXISTS settings (name TEXT NOT NULL, value TEXT, PRIMARY KEY (name));")
+        SQLiteDatabase.execute(SQLiteDatabase, command="CREATE TABLE speedtest (UID VARCHAR(255) NOT NULL , date DATE NOT NULL , time TIME(6) NOT NULL , upload INT NOT NULL , download INT NOT NULL , ping DECIMAL(65) NOT NULL , UNIQUE (UID(255)))")
         SQLiteDatabase.execute(SQLiteDatabase, command="INSERT INTO settings (name, value) VALUES ('fritzbox_address', '');")
         SQLiteDatabase.execute(SQLiteDatabase, command="INSERT INTO settings (name, value) VALUES ('fritzbox_user', '');")
         SQLiteDatabase.execute(SQLiteDatabase, command="INSERT INTO settings (name, value) VALUES ('fritzbox_password', '');")
